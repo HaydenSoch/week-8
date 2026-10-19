@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset = "UTF-8">
+    <title> its really getting to the point where I'd like to eat a sandwich flavored sandwich</title>
+    </head>
+    <body>
+        <button id = "Start1">Start1</button>
+        <input id = "freq1" type="range" min ="1" max = "40" step="0.1" value="2"><label id = "CutOff_Display1">CutOff_Range</label>
+        <input id = "rate1" type="range" min ="0.125" max = "10" step="0.001" value="3"><label id = "Rate_Display1">Rate_Range</label>
+        <button id = "Start2">Start2</button>
+        <input id = "freq2" type="range" min ="1" max = "40" step="0.1" value="3"><label id = "CutOff_Display2">CutOff_Range</label>
+        <input id = "rate2" type="range" min ="0.125" max = "10" step="0.001" value="4"><label id = "Rate_Display2">Rate_Range</label>
+        <button id = "Start3">Start3</button>
+        <input id = "freq3" type="range" min ="1" max = "40" step="0.1" value="4"><label id = "CutOff_Display3">CutOff_Range</label>
+        <input id = "rate3" type="range" min ="0.125" max = "10" step="0.001" value="5"><label id = "Rate_Display3">Rate_Range</label>
+         <script>
+
+const adsrSwell1 = function()
+{
+    mainOsc1.frequency.value = Math.random() * 200 + 100;
+    
+    ctx.resume();
+
+    let now = ctx.currentTime;
+
+    adsr.gain.setValueAtTime(0, now);
+    adsr.gain.linearRampToValueAtTime(1, now + 2);
+    adsr.gain.exponentialRampToValueAtTime(0.0001, now + 5);
+
+};
+
+const adsrSwell2 = function()
+{
+    mainOsc2.frequency.value = Math.random() * 200 + 150;
+    
+    ctx.resume();
+
+    let now = ctx.currentTime;
+
+    adsr.gain.setValueAtTime(0, now);
+    adsr.gain.linearRampToValueAtTime(1, now + 1);
+    adsr.gain.exponentialRampToValueAtTime(0.0001, now + 3);
+
+};
+
+const adsrSwell3 = function()
+{
+    mainOsc3.frequency.value = Math.random() * 200 + 200;
+    
+    ctx.resume();
+
+    let now = ctx.currentTime;
+
+    adsr.gain.setValueAtTime(0, now);
+    adsr.gain.linearRampToValueAtTime(1, now + 1.5);
+    adsr.gain.exponentialRampToValueAtTime(0.0001, now + 4);
+
+};
+
+// 1. Initialize the Audio Context
+const ctx = new AudioContext();
+
+// 2. Create the main audio source (e.g., a sawtooth wave)
+const mainOsc1 = new OscillatorNode(ctx);
+mainOsc1.type = 'sawtooth';
+mainOsc1.frequency.value = 55;
+
+const mainOsc2 = new OscillatorNode(ctx);
+mainOsc2.type = 'square';
+mainOsc2.frequency.value = 50;
+
+const mainOsc3 = new OscillatorNode(ctx);
+mainOsc3.type = 'triangle';
+mainOsc3.frequency.value = 45;
+
+// 3. Create the Low-Pass Filter
+const lpFilter1 = new BiquadFilterNode(ctx);
+lpFilter1.type = 'lowpass';
+lpFilter1.frequency = 800; // Base cutoff frequency
+lpFilter1.Q = 10;           // Add resonance for a more noticeable sweep
+
+const lpFilter2 = new BiquadFilterNode(ctx);
+lpFilter2.type = 'lowpass';
+lpFilter2.frequency = 900; // Base cutoff frequency
+lpFilter2.Q = 8;           // Add resonance for a more noticeable sweep
+
+const lpFilter3 = new BiquadFilterNode(ctx);
+lpFilter3.type = 'lowpass';
+lpFilter3.frequency = 1000; // Base cutoff frequency
+lpFilter3.Q = 6;           // Add resonance for a more noticeable sweep
+
+// 4. Create the LFO (Low Frequency Oscillator)
+const lfo1 = new OscillatorNode(ctx);
+lfo1.type = 'sine'; 
+lfo1.frequency.value = 2; // Speed of modulation (3 Hz / 3 times per second)
+
+const lfo2 = new OscillatorNode(ctx);
+lfo2.type = 'sine'; 
+lfo2.frequency.value = 4; // Speed of modulation (3 Hz / 3 times per second)
+
+const lfo3 = new OscillatorNode(ctx);
+lfo3.type = 'sine'; 
+lfo3.frequency.value = 3; // Speed of modulation (3 Hz / 3 times per second)
+
+// 5. Create the LFO Gain Node to control modulation depth
+const lfoDepth1 = new GainNode(ctx);
+lfoDepth1.gain.value = 10000; // Modulates the cutoff by +/- 500Hz (Sweep range: 300Hz to 1300Hz)
+
+const lfoDepth2 = new GainNode(ctx);
+lfoDepth2.gain.value = 1000; // Modulates the cutoff by +/- 500Hz (Sweep range: 300Hz to 1300Hz)
+
+const lfoDepth3 = new GainNode(ctx);
+lfoDepth3.gain.value = 3000; // Modulates the cutoff by +/- 500Hz (Sweep range: 300Hz to 1300Hz)
+
+// 6. Connect the modulation graph
+lfo1.connect(lfoDepth1);
+lfoDepth1.connect(lpFilter1.frequency); // Target the filter's frequency parameter
+
+lfo2.connect(lfoDepth2);
+lfoDepth2.connect(lpFilter2.frequency); // Target the filter's frequency parameter
+
+lfo3.connect(lfoDepth3);
+lfoDepth3.connect(lpFilter3.frequency); // Target the filter's frequency parameter
+
+const adsr = new GainNode(ctx);
+adsr.gain.value = 0;
+
+const master = new GainNode(ctx);
+
+// 7. Connect the main audio signal path
+mainOsc1.connect(lpFilter1);
+mainOsc2.connect(lpFilter2);
+mainOsc3.connect(lpFilter3);
+
+lpFilter1.connect(adsr);
+lpFilter2.connect(adsr);
+lpFilter3.connect(adsr);
+adsr.connect(master);
+master.connect(ctx.destination);
+
+// 8. Start both oscillators
+mainOsc1.start();
+mainOsc2.start();
+mainOsc3.start();
+lfo1.start();
+lfo2.start();
+lfo3.start();
+
+const theClickButton1 = document.querySelector("#Start1");
+theClickButton1.addEventListener("click", adsrSwell1);
+
+const theClickButton2 = document.querySelector("#Start2");
+theClickButton2.addEventListener("click", adsrSwell2);
+
+const theClickButton3 = document.querySelector("#Start3");
+theClickButton3.addEventListener("click", adsrSwell3);
+
+const slider1 = document.querySelector("#freq1");
+slider1.addEventListener("input", () => {
+    ctx.resume();
+    lfoDepth1.gain.value = 100 * (Number(slider1.value));
+    document.querySelector("#CutOff_Display1").textContent = slider1.value;
+    });
+
+    const slider2 = document.querySelector("#rate1");
+slider2.addEventListener("input", () => {
+    ctx.resume();
+    lfo1.frequency.value = (Number(slider2.value));
+    document.querySelector("#Rate_Display1").textContent = slider2.value;
+    });
+
+const slider3 = document.querySelector("#freq2");
+    slider3.addEventListener("input", () => {
+    ctx.resume();
+    lfoDepth2.gain.value = 100 * (Number(slider3.value));
+    document.querySelector("#CutOff_Display2").textContent = slider3.value;
+    });
+
+const slider4 = document.querySelector("#rate2");
+    slider4.addEventListener("input", () => {
+    ctx.resume();
+    lfo2.frequency.value = (Number(slider4.value));
+    document.querySelector("#Rate_Display2").textContent = slider4.value;
+    });
+
+const slider5 = document.querySelector("#freq3");
+    slider5.addEventListener("input", () => {
+    ctx.resume();
+    lfoDepth3.gain.value = 100 * (Number(slider5.value));
+    document.querySelector("#CutOff_Display3").textContent = slider5.value;
+    });
+
+const slider6 = document.querySelector("#rate3");
+    slider6.addEventListener("input", () => {
+    ctx.resume();
+    lfo3.frequency.value = (Number(slider6.value));
+    document.querySelector("#Rate_Display3").textContent = slider6.value;
+    });
+ </script>
+    
+    </body>
+</html>
